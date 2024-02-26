@@ -87,6 +87,10 @@ func pulledImageFromArgs(args []string) string {
 // short-circuits and returns `true`.
 // This can be an expensive operation, so use it mindfully.
 func hubLoggedIn() bool {
+	configFile := config.LoadDefaultConfigFile(nil)
+	if configFile == nil {
+		return false
+	}
 	result := make(chan bool)
 	go func() {
 		creds, err := config.LoadDefaultConfigFile(nil).GetAllCredentials()
