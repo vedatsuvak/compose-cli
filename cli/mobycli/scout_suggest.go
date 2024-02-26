@@ -87,21 +87,28 @@ func pulledImageFromArgs(args []string) string {
 // short-circuits and returns `true`.
 // This can be an expensive operation, so use it mindfully.
 func hubLoggedIn() bool {
-	result := make(chan bool)
-	go func() {
-		creds, err := config.LoadDefaultConfigFile(nil).GetAllCredentials()
-		if err != nil {
-			// preserve original behaviour if we fail to fetch creds
-			result <- true
-		}
-		_, ok := creds[registry.IndexServer]
-		result <- ok
-	}()
-	select {
-	case loggedIn := <-result:
-		return loggedIn
-	case <-time.After(100 * time.Millisecond):
-		// preserve original behaviour if we time out
-		return true
-	}
+    result := make(chan bool)
+    go func() {
+        configFile, err := config.LoadDefaultConfigFile(nil)
+        if err != nil {
+            // preserve original behaviour if we fail to fetch config
+            result <- true
+            return
+        }
+        creds, err := configFile.GetAllCredentials()
+        if err != nil {
+            // preserve original behaviour if we fail to fetch creds
+            result <- true
+            return
+        }
+        _, ok := creds[registry.IndexServer]
+        result <- ok
+    }()
+    select {
+    case loggedIn := <-result:
+        return loggedIn
+    case <-time.After(100 * time.Millisecond):
+        // preserve original behaviour if we time out
+        return true
+    }
 }
